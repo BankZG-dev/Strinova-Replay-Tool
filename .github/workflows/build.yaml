@@ -1,0 +1,46 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]       # Runs automatically when you publish a release on GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest    # Builds on a real Windows machine in the cloud
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller `
+            --onefile `
+            --windowed `
+            --name "StrinovaReplayTool" `
+            --icon "assets/strinova_icon.ico" `
+            --add-data "assets/strinova_icon.ico;." `
+            --collect-all customtkinter `
+            --collect-all darkdetect `
+            --hidden-import customtkinter `
+            --hidden-import darkdetect `
+            --hidden-import PIL `
+            --hidden-import PIL.Image `
+            --hidden-import PIL.ImageTk `
+            --runtime-tmpdir "%LOCALAPPDATA%\StrinovaReplayTool\tmp" `
+            src/StrinovaReplayTool.py
+
+      - name: Upload EXE to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/StrinovaReplayTool.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
